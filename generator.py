@@ -87,134 +87,134 @@ def format_case(title, preconditions, steps, expected):
 # MODULES
 # ------------------------------
 
-def login_cases():
-    return [
-        format_case(
-            "Login with valid credentials",
-            "Registered user exists",
-            "Enter valid username\nEnter valid password\nClick Login",
-            "User redirected to dashboard"
-        ),
-        format_case(
-            "Login with invalid password",
-            "Registered user exists",
-            "Enter valid username\nEnter wrong password\nClick Login",
-            "Error message displayed"
-        ),
-        format_case(
-            "Login with empty fields",
-            "None",
-            "Leave username and password empty\nClick Login",
-            "Validation error shown"
-        ),
-    ]
-
-
-def signup_cases():
-    return [
-        format_case(
-            "Signup with valid details",
-            "User on signup page",
-            "Enter valid name/email/password\nClick Signup",
-            "Account created"
-        ),
-        format_case(
-            "Signup with existing email",
-            "Email already exists",
-            "Enter existing email\nClick Signup",
-            "Duplicate email error"
-        ),
-    ]
-
-
-def transaction_cases():
-    return [
-        format_case(
-            "Add funds with valid amount",
-            "User logged in",
-            "Enter valid amount\nClick Add Funds",
-            "Balance updated successfully"
-        ),
-        format_case(
-            "Add funds with negative amount",
-            "User logged in",
-            "Enter -100\nClick Add Funds",
-            "Validation error shown"
-        ),
-        format_case(
-            "Add funds exceeding max limit",
-            "Max limit is 50,000",
-            "Enter 100000\nClick Add Funds",
-            "System should block transaction"
-        ),
-    ]
-
-
-def reset_password_cases():
-    return [
-        format_case(
-            "Reset password with valid email",
-            "User registered",
-            "Enter registered email\nClick Reset",
-            "Password reset link sent"
-        ),
-        format_case(
-            "Reset password with invalid email",
-            "None",
-            "Enter unregistered email\nClick Reset",
-            "Error message displayed"
-        ),
-    ]
-
-
 # ------------------------------
-# DYNAMIC ENGINE
+# UNIVERSAL FEATURE ENGINE
 # ------------------------------
 
-keyword_map = {
-    "login": login_cases,
-    "signin": login_cases,
-    "signup": signup_cases,
-    "register": signup_cases,
-    "add": transaction_cases,
-    "fund": transaction_cases,
-    "payment": transaction_cases,
-    "reset": reset_password_cases,
-    "forgot": reset_password_cases,
+FEATURE_MAP = {
+    "authentication": ["login", "signup", "register", "reset", "password", "auth"],
+    "transaction": ["payment", "checkout", "cart", "fund", "transfer"],
+    "search": ["search", "filter", "sort"],
+    "upload": ["upload", "file", "attachment"],
+    "dashboard": ["dashboard", "admin", "panel"],
+    "api": ["api", "endpoint", "rest", "json"],
+    "form": ["form", "submit", "input"],
+    
 }
+ROLE_KEYWORDS = ["admin", "role", "permission", "access", "user management"]
+def detect_roles(user_story):
+    story = user_story.lower()
+    return any(word in story for word in ROLE_KEYWORDS)
+
+def detect_features(user_story):
+    detected = []
+    story = user_story.lower()
+
+    for feature, keywords in FEATURE_MAP.items():
+        if any(word in story for word in keywords):
+            detected.append(feature)
+
+    return detected
 
 
-def generate(user_story):
-    user_story = user_story.lower()
+def generate_feature_tests(feature):
     cases = []
 
-    triggered_modules = set()
+    cases.append(format_case(
+        f"{feature} - Functional validation",
+        "System available",
+        f"Perform valid {feature} action",
+        "System processes successfully"
+    ))
 
-    # Keyword-based modules
-    for keyword, function in keyword_map.items():
-        if keyword in user_story:
-            if function not in triggered_modules:
-                cases.extend(function())
-                triggered_modules.add(function)
+    cases.append(format_case(
+        f"{feature} - Negative validation",
+        "System available",
+        f"Perform invalid {feature} action",
+        "System shows proper error"
+    ))
 
-    # 🔥 ADD THIS LINE (Boundary Engine Integration)
+    cases.append(format_case(
+        f"{feature} - UI validation",
+        "User on page",
+        "Verify layout, labels, responsiveness",
+        "UI should render correctly"
+    ))
+
+    cases.append(format_case(
+        f"{feature} - Security validation",
+        "User access available",
+        "Attempt malicious or unauthorized input",
+        "System prevents security breach"
+    ))
+
+    cases.append(format_case(
+        f"{feature} - Performance validation",
+        "System operational",
+        f"Perform repeated {feature} action under load",
+        "System remains stable"
+    ))
+
+    return cases
+def generate_feature_tests(feature):
+    cases = []
+    ...
+    return cases
+
+
+# ⬇ ADD IT HERE ⬇
+
+def generate_role_tests():
+    cases = []
+
+    cases.append(format_case(
+        "Role-based access validation",
+        "Multiple user roles exist",
+        "Login as Admin and access restricted module",
+        "Admin should access successfully"
+    ))
+
+    cases.append(format_case(
+        "Unauthorized access prevention",
+        "User role defined",
+        "Login as normal user and access admin module",
+        "Access should be denied"
+    ))
+
+    cases.append(format_case(
+        "UI visibility per role",
+        "User roles configured",
+        "Login as different roles",
+        "Only permitted UI elements should be visible"
+    ))
+
+    return cases
+
+# ------------------------------
+# MAIN GENERATE FUNCTION
+# ------------------------------
+
+def generate(user_story):
+    features = detect_features(user_story)
+    cases = []
+
+    # Feature-based tests
+    for feature in features:
+        cases.extend(generate_feature_tests(feature))
+
+    # 🔥 Role detection
+    if detect_roles(user_story):
+        cases.extend(generate_role_tests())
+
+    # Boundary tests
     cases.extend(generate_boundary_cases(user_story))
 
     # Fallback
     if not cases:
         cases.append(format_case(
-            "Generic validation",
+            "Generic Functional Validation",
             "System available",
-            "Perform intended action",
-            "System behaves as expected"
-        ))
-
-    return cases
-    if not cases:
-        cases.append(format_case(
-            "Generic validation",
-            "System available",
-            "Perform intended action",
+            "Perform intended operation",
             "System behaves as expected"
         ))
 
